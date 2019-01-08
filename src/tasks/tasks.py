@@ -412,6 +412,29 @@ class LanguageModelingTask(SequenceGenerationTask):
                 yield sent
 
 
+@register_task('wsj', rel_path='Penn/')
+class WSJLanguageModelling(LanguageModelingTask):
+    """ Language modeling on a PTB dataset
+    See base class: LanguageModelingTask
+    """
+
+    def __init__(self, path, max_seq_len, name="wiki"):
+        super().__init__(path, max_seq_len, name)
+
+    def load_data(self, path):
+        """Loading data file and tokenizing the text
+        Args:
+            path: (str) data file path
+        """
+        nonatomics_toks=['@@UNKNOWN@@', '<unk>']
+        with open(path) as txt_fh:
+            for row in txt_fh:
+                toks = row.strip()
+                if not toks:
+                    continue
+                toks=_atomic_tokenize(toks, UNK_TOK_ATOMIC, nonatomics_toks, self.max_seq_len)
+                yield process_sentence(toks, self.max_seq_len)
+
 class WikiTextLMTask(LanguageModelingTask):
     """ Language modeling on a Wikitext dataset
     See base class: LanguageModelingTask
@@ -1532,7 +1555,6 @@ class MTTask(SequenceGenerationTask):
             d["inputs"] = sentence_to_text_field(input, indexers)
             d["targs"] = sentence_to_text_field(target, self.target_indexer)  # this line changed
             return Instance(d)
-
         for sent1, sent2 in split:
             yield _make_instance(sent1, sent2)
 
